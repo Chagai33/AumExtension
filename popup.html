@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Spotify Song Details</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      min-width: 200px;
+      padding: 10px;
+      background-color: #e5d9b6;
+      text-align: center;
+    }
+    #header {
+      font-size: 0.8em;
+      margin-bottom: 10px;
+    }
+    h2 {
+      font-size: 1.5em; /* הקטנת הכותרת */
+    }
+    #song-details {
+      margin-top: 10px;
+    }
+    #search-youtube, #lyrics-button {
+      margin-top: 10px;
+      padding: 5px 10px;
+      font-size: 1em;
+      cursor: pointer;
+      background-color: #d8c690;
+      border: none;
+      border-radius: 5px;
+    }
+    #lyrics-button {
+      font-size: 0.8em; /* כפתור קטן יותר */
+    }
+  </style>
+</head>
+<body>
+  <h3 id="header">Aum.Music</h3>
+  <h2>Now Playing</h2>
+  <div id="song-details">
+    <p id="song-info"></p>
+    <p><strong>Track ID:</strong> <span id="trackId"></span></p>
+    <button id="search-youtube">Search on YouTube</button>
+    <button id="lyrics-button">Lyrics</button>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
