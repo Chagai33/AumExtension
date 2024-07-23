@@ -2,10 +2,13 @@
   "manifest_version": 3,
   "name": "Spotify Song Details",
   "version": "1.0",
-  "description": "Displays current playing song details from Spotify.",
+  "description": "Displays details about the currently playing song on Spotify.",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "tabs",
+    "storage",
+    "https://api.spotify.com/"
   ],
   "background": {
     "service_worker": "background.js"
@@ -25,7 +28,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://open.spotify.com/*"],
+      "matches": ["*://*.spotify.com/*"],
       "js": ["content.js"]
     }
   ]
