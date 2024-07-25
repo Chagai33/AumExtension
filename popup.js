@@ -17,6 +17,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Add click event to the download playlists button
+  document.getElementById('download-playlists').addEventListener('click', () => {
+    chrome.tabs.create({ url: "download.html" });
+  });
+
+  // Remove the connect Spotify button event listener from the popup
+  // document.getElementById('connect-spotify').addEventListener('click', () => {
+  //   initiateSpotifyAuth();
+  // });
+
   let currentTrackId = null;
 
   function updateSongDetails() {
@@ -134,6 +144,88 @@ document.addEventListener('DOMContentLoaded', () => {
   // Always show footer
   document.getElementById('footer').style.display = 'block';
 });
+
+function initiateSpotifyAuth() {
+  const clientId = '276ff68d7b8d45068933752f4cdbced5';
+  const redirectUri = 'https://bicapbdkaileclciifbengifanfenolh.chromiumapp.org/spotify';
+  const scopes = 'playlist-read-private playlist-read-collaborative';
+
+  const codeVerifier = generateCodeVerifier();
+  generateCodeChallenge(codeVerifier).then(codeChallenge => {
+    const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge_method=S256&code_challenge=${codeChallenge}`;
+
+    chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, function (redirectUrl) {
+      if (chrome.runtime.lastError || !redirectUrl) {
+        console.error('Error during Spotify authentication:', chrome.runtime.lastError.message);
+        return;
+      }
+
+      const urlParams = new URLSearchParams(new URL(redirectUrl).search);
+      const code = urlParams.get('code');
+      if (code) {
+        exchangeCodeForToken(code, codeVerifier);
+      } else {
+        console.error('No code found in redirect URL');
+      }
+    });
+  });
+}
+
+function generateCodeVerifier() {
+  const array = new Uint8Array(56);
+  window.crypto.getRandomValues(array);
+  return base64UrlEncode(array);
+}
+
+function generateCodeChallenge(codeVerifier) {
+  return crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier)).then(buffer => {
+    return base64UrlEncode(new Uint8Array(buffer));
+  });
+}
+
+function base64UrlEncode(buffer) {
+  return btoa(String.fromCharCode.apply(null, buffer))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+}
+
+function exchangeCodeForToken(code, codeVerifier) {
+  const clientId = '276ff68d7b8d45068933752f4cdbced5';
+  const redirectUri = 'https://bicapbdkaileclciifbengifanfenolh.chromiumapp.org/spotify';
+  const tokenUrl = 'https://accounts.spotify.com/api/token';
+
+  const body = new URLSearchParams({
+    grant_type: 'authorization_code',
+    code: code,
+    redirect_uri: redirectUri,
+    client_id: clientId,
+    code_verifier: codeVerifier
+  });
+
+  fetch(tokenUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    },
+    body: body.toString()
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.access_token) {
+      chrome.storage.local.set({ token: data.access_token }, () => {
+        console.log('Token saved');
+        alert('Spotify connected successfully!');
+        chrome.tabs.create({ url: "download.html" });
+      });
+    } else {
+      console.error('Error obtaining token:', data);
+    }
+  })
+  .catch(error => {
+    console.error('Error exchanging code for token:', error);
+  });
+}
 
 function getSpotifySongDetails() {
   let nowPlayingElement = document.querySelector('[aria-label="now playing view link"]');
@@ -266,7 +358,9 @@ async function findTrackInPlaylists(trackId, playlists) {
 }
 
 function updateProgressBar(processed, total, message) {
-  console.log(message);  // Logging the progress
+  const progress = (processed / total) * 100;
+  document.getElementById('progress-fill').style.width = `${progress}%`;
+  document.getElementById('progress-text').innerText = message;
 }
 
 function sleep(ms) {

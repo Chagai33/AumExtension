@@ -110,6 +110,22 @@
       border-radius: 5px;
       margin-top: 10px;
     }
+    #progress-container {
+      display: none;
+      margin-top: 10px;
+    }
+    #progress-bar {
+      width: 100%;
+      background-color: #f3f3f3;
+      border: 1px solid #d8c690;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    #progress-fill {
+      width: 0;
+      height: 20px;
+      background-color: #4caf50;
+    }
   </style>
 </head>
 <body>
@@ -136,8 +152,18 @@
     <button id="open-spotify">Open Spotify Web Player</button>
   </div>
   <div id="copy-notification">Link copied to clipboard!</div>
+  <div id="progress-container">
+    <div id="progress-bar">
+      <div id="progress-fill"></div>
+    </div>
+    <p id="progress-text"></p>
+  </div>
   <div id="footer">
     Developed by <a href="https://www.linkedin.com/in/chagai-yechiel" target="_blank">Chagai.Yechiel</a>
+  </div>
+  <div class="button-container">
+    <button id="connect-spotify">Connect to Spotify</button>
+    <button id="download-playlists">Download Playlists</button>
   </div>
   <script src="popup.js"></script>
 </body>

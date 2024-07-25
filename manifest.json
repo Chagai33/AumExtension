@@ -1,14 +1,20 @@
 {
   "manifest_version": 3,
-  "name": "Spotify Song Details",
+  "name": "Spotify Playlist Downloader",
   "version": "1.0",
-  "description": "Displays details about the currently playing song on Spotify.",
+  "description": "Download Spotify playlists.",
   "permissions": [
-    "activeTab",
-    "scripting",
+    "identity",
     "tabs",
     "storage",
-    "https://api.spotify.com/"
+    "scripting",
+    "activeTab",
+    "webRequest",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://accounts.spotify.com/*",
+    "https://api.spotify.com/*"
   ],
   "background": {
     "service_worker": "background.js"
@@ -31,5 +37,13 @@
       "matches": ["*://*.spotify.com/*"],
       "js": ["content.js"]
     }
-  ]
+  ],
+  "oauth2": {
+    "client_id": "YOUR_CLIENT_ID",
+    "scopes": [
+      "identity",
+      "playlist-read-private",
+      "playlist-read-collaborative"
+    ]
+  }
 }

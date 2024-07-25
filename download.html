@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Spotify Playlist Download</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
+    #progress-container {
+      width: 100%;
+      background-color: white;
+      border: 1px solid #d8c690;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 20px;
+    }
+    #progress-fill {
+      width: 0;
+      height: 20px;
+      background-color: #4caf50;
+    }
+    #progress-text {
+      margin-top: 10px;
+    }
+    #playlist-names {
+      margin-top: 20px;
+      text-align: left;
+      max-height: 300px;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+    }
+    .playlist-item {
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+    }
+    #start-button, #stop-button, #clear-cache-button, #connect-spotify-button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #stop-button, #clear-cache-button {
+      background-color: #ff4c4c;
+    }
+    #start-button:hover, #stop-button:hover, #clear-cache-button:hover, #connect-spotify-button:hover {
+      background-color: #45a049;
+    }
+    #stop-button:hover, #clear-cache-button:hover {
+      background-color: #ff1a1a;
+    }
+  </style>
+</head>
+<body>
+  <h1>Spotify Playlist Download</h1>
+  <div id="progress-container">
+    <div id="progress-fill"></div>
+  </div>
+  <p id="progress-text">By: Chagai Yechiel</p>
+  <div id="playlist-names"></div>
+  <button id="connect-spotify-button">Login to Spotify</button>
+  <button id="start-button" style="display: none;">Start Download</button>
+  <button id="stop-button" style="display: none;">Stop Download</button>
+  <button id="clear-cache-button">Clear Cache</button>
+  <script src="download.js"></script>
+</body>
+</html>

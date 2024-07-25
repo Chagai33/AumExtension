@@ -1,11 +1,17 @@
+// background.js
+console.log('Background script loaded');
+
+// Listener for onInstalled event to create context menu
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'downloadPlaylists',
     title: 'Download Playlists',
     contexts: ['action']
   });
+  console.log('Context menu created');
 });
 
+// Listener for context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'downloadPlaylists') {
     chrome.storage.local.get('token', (result) => {
@@ -18,40 +24,70 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
-function downloadPlaylists(token) {
-  console.log('Starting to download playlists...');
-  fetchPlaylists(token)
-    .then(playlists => {
-      console.log('Fetched playlists:', playlists);
-      const report = {
-        totalPlaylists: playlists.length,
-        playlists: playlists.map(playlist => ({
-          id: playlist.id,
-          name: playlist.name,
-          tracks: playlist.tracks
-        }))
-      };
-
-      const json = JSON.stringify(report, null, 2);
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'playlists_report.json';
-      a.click();
-      URL.revokeObjectURL(url);
-
-      console.log('Playlists downloaded successfully');
-    })
-    .catch(error => {
-      console.error('Error fetching playlists for download:', error);
+// Listener for runtime messages
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('Message received in background:', request);
+  if (request.action === 'downloadPlaylists') {
+    downloadPlaylists(request.token);
+  } else if (request.action === 'updateProgress') {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      if (tabs[0]) {
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'updateProgress',
+          processed: request.processed,
+          total: request.total,
+          name: request.name
+        }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error('Error sending message to content script:', chrome.runtime.lastError);
+          } else {
+            console.log('Response from content script:', response);
+          }
+        });
+      } else {
+        console.error('No active tab found');
+      }
     });
+  }
+});
+
+// Function to download playlists
+async function downloadPlaylists(token) {
+  console.log('Starting to download playlists...');
+  try {
+    const playlists = await fetchPlaylists(token);
+    console.log('Fetched playlists:', playlists);
+    const report = {
+      totalPlaylists: playlists.length,
+      playlists: playlists.map(playlist => ({
+        id: playlist.id,
+        name: playlist.name,
+        tracks: playlist.tracks
+      }))
+    };
+
+    const json = JSON.stringify(report, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'playlists_report.json';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    console.log('Playlists downloaded successfully');
+  } catch (error) {
+    console.error('Error fetching playlists for download:', error);
+  }
 }
 
+// Function to fetch playlists
 async function fetchPlaylists(token) {
   const playlists = [];
   let url = 'https://api.spotify.com/v1/me/playlists';
   let totalPlaylists = 0;
+
+  chrome.runtime.sendMessage({ action: 'showProgressBar' });
 
   while (url) {
     const playlistsResponse = await fetch(url, {
@@ -66,12 +102,20 @@ async function fetchPlaylists(token) {
     }
 
     const playlistsData = await playlistsResponse.json();
-    playlists.push(...playlistsData.items);
-    totalPlaylists += playlistsData.items.length;
+    const filteredPlaylists = playlistsData.items.filter(playlist => playlist.tracks.total <= 500);
+    playlists.push(...filteredPlaylists);
+    totalPlaylists += filteredPlaylists.length;
 
-    console.log(`Fetched ${playlistsData.items.length} playlists, total so far: ${totalPlaylists}`);
+    console.log(`Fetched ${filteredPlaylists.length} playlists, total so far: ${totalPlaylists}`);
 
     url = playlistsData.next; // Go to next page if available
+
+    chrome.runtime.sendMessage({
+      action: 'updateProgress',
+      processed: playlists.length,
+      total: totalPlaylists,
+      name: filteredPlaylists[filteredPlaylists.length - 1].name
+    });
 
     await sleep(200); // Sleep for 200ms to avoid rate limits
   }
@@ -116,9 +160,12 @@ async function fetchPlaylists(token) {
     console.log(`Total tracks for playlist ${playlist.name}: ${totalTracks}`);
   }
 
+  chrome.runtime.sendMessage({ action: 'hideProgressBar' });
+
   return playlists;
 }
 
+// Sleep function
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
