@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Spotify Playlist Download</title>
+  <title>Easy Playlist Tracker for Spotify</title>
+  <meta charset="UTF-8">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -25,6 +26,9 @@
     #progress-text {
       margin-top: 10px;
     }
+    #filter-container {
+      margin-top: 20px;
+    }
     #playlist-names {
       margin-top: 20px;
       text-align: left;
@@ -37,7 +41,7 @@
       border-bottom: 1px solid #ccc;
       padding: 10px 0;
     }
-    #start-button, #stop-button, #clear-cache-button, #connect-spotify-button {
+    #start-button, #stop-button, #clear-button, #clear-cache-button, #connect-spotify-button, #download-csv-button {
       margin-top: 10px;
       padding: 10px 20px;
       background-color: #4caf50;
@@ -46,28 +50,57 @@
       border-radius: 5px;
       cursor: pointer;
     }
-    #stop-button, #clear-cache-button {
+    #stop-button, #clear-cache-button, #clear-button {
       background-color: #ff4c4c;
     }
-    #start-button:hover, #stop-button:hover, #clear-cache-button:hover, #connect-spotify-button:hover {
+    #start-button:hover, #stop-button:hover, #clear-cache-button:hover, #connect-spotify-button:hover, #clear-button:hover, #download-csv-button:hover {
       background-color: #45a049;
     }
-    #stop-button:hover, #clear-cache-button:hover {
+    #stop-button:hover, #clear-cache-button:hover, #clear-button:hover {
       background-color: #ff1a1a;
+    }
+    #logo-container {
+      text-align: center;
+      margin-top: 20px;
+    }
+    #logo {
+      width: 150px;
+    }
+    #report {
+      margin-top: 20px;
+      text-align: left;
+      border: 1px solid #ccc;
+      padding: 10px;
     }
   </style>
 </head>
 <body>
-  <h1>Spotify Playlist Download</h1>
+  <div id="logo-container">
+    <img id="logo" src="icons/image.png" alt="Logo">
+  </div>
+  <h1>Easy Playlist Tracker for Spotify</h1>
+  <div id="filter-container">
+    <label for="min-songs">Min Songs:</label>
+    <input type="number" id="min-songs" value="0">
+    <label for="max-songs">Max Songs:</label>
+    <input type="number" id="max-songs" value="100">
+    <label for="include-string">Include String:</label>
+    <input type="text" id="include-string">
+    <label for="exclude-string">Exclude String:</label>
+    <input type="text" id="exclude-string">
+    <button id="clear-button">Clear</button>
+  </div>
   <div id="progress-container">
     <div id="progress-fill"></div>
   </div>
   <p id="progress-text">By: Chagai Yechiel</p>
   <div id="playlist-names"></div>
+  <div id="report"></div>
   <button id="connect-spotify-button">Login to Spotify</button>
   <button id="start-button" style="display: none;">Start Download</button>
   <button id="stop-button" style="display: none;">Stop Download</button>
   <button id="clear-cache-button">Clear Cache</button>
+  <button id="download-csv-button" style="display: none;">Download CSV</button>
   <script src="download.js"></script>
 </body>
 </html>

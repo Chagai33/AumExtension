@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Spotify Playlist Downloader",
+  "name": "Easy Playlist Tracker for Spotify",
   "version": "1.0",
   "description": "Download Spotify playlists.",
   "permissions": [
@@ -39,7 +39,7 @@
     }
   ],
   "oauth2": {
-    "client_id": "YOUR_CLIENT_ID",
+    "client_id": "276ff68d7b8d45068933752f4cdbced5",
     "scopes": [
       "identity",
       "playlist-read-private",

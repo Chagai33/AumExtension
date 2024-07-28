@@ -1,16 +1,32 @@
 // download.js
 
+const clientId = '276ff68d7b8d45068933752f4cdbced5';
+const redirectUri = 'https://bicapbdkaileclciifbengifanfenolh.chromiumapp.org/spotify';
+
 document.addEventListener('DOMContentLoaded', () => {
   const progressFill = document.getElementById('progress-fill');
   const progressText = document.getElementById('progress-text');
   const playlistNames = document.getElementById('playlist-names');
   const startButton = document.getElementById('start-button');
   const stopButton = document.getElementById('stop-button');
+  const clearButton = document.getElementById('clear-button');
   const clearCacheButton = document.getElementById('clear-cache-button');
   const connectSpotifyButton = document.getElementById('connect-spotify-button');
+  const downloadCsvButton = document.getElementById('download-csv-button');
+  const minSongsInput = document.getElementById('min-songs');
+  const maxSongsInput = document.getElementById('max-songs');
+  const includeStringInput = document.getElementById('include-string');
+  const excludeStringInput = document.getElementById('exclude-string');
+  const reportContainer = document.getElementById('report');
   let stopRequested = false;
+  let processedPlaylistsData = [];
 
   function updateProgress(processed, total, name) {
+    progressText.textContent = `Processing playlist: ${name} (${processed}/${total})`;
+
+    const progressPercentage = (processed / total) * 100;
+    progressFill.style.width = `${progressPercentage}%`;
+
     chrome.runtime.sendMessage({
       action: 'updateProgress',
       processed: processed,
@@ -31,18 +47,22 @@ document.addEventListener('DOMContentLoaded', () => {
   function downloadPlaylists(token) {
     console.log('Starting to download playlists...');
     fetchPlaylists(token)
-      .then(playlists => {
-        console.log('Fetched playlists:', playlists);
-        const report = {
-          totalPlaylists: playlists.length,
-          playlists: playlists.map(playlist => ({
-            id: playlist.id,
-            name: playlist.name,
-            tracks: playlist.tracks
-          }))
-        };
+      .then(({ allPlaylists, filteredPlaylists }) => {
+        if (stopRequested) {
+          displayError('Error: The operation was stopped.');
+          startButton.textContent = 'Start Download';
+          startButton.disabled = false;
+          return;
+        }
 
-        const json = JSON.stringify(report, null, 2);
+        console.log('Fetched playlists:', filteredPlaylists);
+        processedPlaylistsData = filteredPlaylists.map(playlist => ({
+          id: playlist.id,
+          name: playlist.name,
+          tracks: playlist.tracks
+        }));
+
+        const json = JSON.stringify({ totalPlaylists: filteredPlaylists.length, playlists: processedPlaylistsData }, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -51,15 +71,21 @@ document.addEventListener('DOMContentLoaded', () => {
         a.click();
         URL.revokeObjectURL(url);
 
-        alert('Playlists downloaded successfully. The file has been saved as playlists_report.json in your Downloads folder.');
-        displayPlaylists(playlists);
+        alert('Playlists downloaded successfully. Please save the file as playlists_report.json in the extension\'s folder.');
+        displayPlaylists(filteredPlaylists);
+
+        downloadCsvButton.style.display = 'block';
+        startButton.textContent = 'Start Download';
+        startButton.disabled = false;
 
         console.log('Playlists downloaded successfully');
+        displayReport(allPlaylists.length, filteredPlaylists.length);
       })
       .catch(error => {
         console.error('Error fetching playlists for download:', error);
         displayError(error.message);
         startButton.textContent = 'Start Download';
+        startButton.disabled = false;
       });
   }
 
@@ -67,7 +93,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const playlists = new Set();
     let url = 'https://api.spotify.com/v1/me/playlists';
     let totalPlaylists = 0;
-    const allFilteredPlaylists = [];
+    const allPlaylists = [];
+    const filteredPlaylists = [];
+    const minSongs = parseInt(minSongsInput.value, 10);
+    const maxSongs = parseInt(maxSongsInput.value, 10);
+    const includeStrings = includeStringInput.value.toLowerCase().split(',').map(s => s.trim());
+    const excludeStrings = excludeStringInput.value.toLowerCase().split(',').map(s => s.trim());
 
     while (url && !stopRequested) {
       const playlistsResponse = await fetch(url, {
@@ -82,18 +113,33 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const playlistsData = await playlistsResponse.json();
-      const filteredPlaylists = playlistsData.items.filter(playlist => playlist.tracks.total <= 100 && !playlist.name.toLowerCase().includes('outofplaylist'));
+      allPlaylists.push(...playlistsData.items);
 
-      filteredPlaylists.forEach(playlist => {
+      const filtered = playlistsData.items.filter(playlist => {
+        const name = playlist.name.toLowerCase();
+        const isValid = playlist.tracks.total >= minSongs &&
+                        playlist.tracks.total <= maxSongs &&
+                        (!includeStrings[0] || includeStrings.some(str => name.includes(str))) &&
+                        (!excludeStrings[0] || !excludeStrings.some(str => name.includes(str)));
+
+        if (!isValid) {
+          console.log(`Skipping playlist: ${playlist.name} with ${playlist.tracks.total} tracks`);
+        } else {
+          console.log(`Including playlist: ${playlist.name} with ${playlist.tracks.total} tracks`);
+        }
+
+        return isValid;
+      });
+
+      filtered.forEach(playlist => {
         if (!playlists.has(playlist.id)) {
           playlists.add(playlist.id);
-          allFilteredPlaylists.push(playlist);
-          updateProgress(playlists.size, totalPlaylists + filteredPlaylists.length, playlist.name);
+          filteredPlaylists.push(playlist);
+          totalPlaylists++;
           console.log(`Currently processing: ${playlist.name}`);
         }
       });
 
-      totalPlaylists += filteredPlaylists.length;
       url = playlistsData.next; // Go to next page if available
       await sleep(200); // Sleep for 200ms to avoid rate limits
     }
@@ -105,7 +151,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     console.log(`Total playlists fetched: ${totalPlaylists}`);
 
-    for (const playlist of allFilteredPlaylists) {
+    let processedPlaylists = 0;
+    for (const playlist of filteredPlaylists) {
+      processedPlaylists++;
+      updateProgress(processedPlaylists, totalPlaylists, playlist.name);
+
       const tracks = [];
       let tracksUrl = `https://api.spotify.com/v1/playlists/${playlist.id}/tracks`;
       let totalTracks = 0;
@@ -129,7 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log(`Fetched ${tracksData.items.length} tracks for playlist ${playlist.name}, total so far: ${totalTracks}`);
 
         tracksUrl = tracksData.next; // Go to next page if available
-
         await sleep(200); // Sleep for 200ms to avoid rate limits
       }
 
@@ -146,9 +195,10 @@ document.addEventListener('DOMContentLoaded', () => {
       }));
 
       console.log(`Total tracks for playlist ${playlist.name}: ${totalTracks}`);
+      displayProcessedPlaylist(playlist.name, totalTracks);
     }
 
-    return allFilteredPlaylists;
+    return { allPlaylists, filteredPlaylists };
   }
 
   function sleep(ms) {
@@ -168,11 +218,29 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function displayProcessedPlaylist(name, totalTracks) {
+    const playlistElement = document.createElement('div');
+    playlistElement.className = 'playlist-item';
+    playlistElement.innerHTML = `
+      <h3>${name}</h3>
+      <p>Total tracks: ${totalTracks}</p>
+    `;
+    playlistNames.appendChild(playlistElement);
+  }
+
   function displayError(message) {
     const errorElement = document.createElement('p');
     errorElement.style.color = 'red';
     errorElement.textContent = `Error: ${message}`;
     document.body.appendChild(errorElement);
+  }
+
+  function displayReport(totalPlaylists, filteredPlaylists) {
+    reportContainer.innerHTML = `
+      <h3>Report</h3>
+      <p>Total playlists in account: ${totalPlaylists}</p>
+      <p>Playlists processed after filtering: ${filteredPlaylists}</p>
+    `;
   }
 
   connectSpotifyButton.addEventListener('click', () => {
@@ -183,6 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.local.get('token', (result) => {
       if (result.token) {
         startButton.textContent = 'Downloading...';
+        startButton.disabled = true;
+        stopButton.style.display = 'block';
+        downloadCsvButton.style.display = 'none';
         downloadPlaylists(result.token);
       } else {
         console.error('No token found in storage');
@@ -194,13 +265,26 @@ document.addEventListener('DOMContentLoaded', () => {
   stopButton.addEventListener('click', () => {
     if (stopButton.textContent === 'Stop Download') {
       stopRequested = true;
+      startButton.textContent = 'Start Download';
+      startButton.disabled = false;
     } else {
       location.reload();
     }
   });
 
+  clearButton.addEventListener('click', () => {
+    minSongsInput.value = '0';
+    maxSongsInput.value = '100';
+    includeStringInput.value = '';
+    excludeStringInput.value = '';
+  });
+
   clearCacheButton.addEventListener('click', () => {
     clearCache();
+  });
+
+  downloadCsvButton.addEventListener('click', () => {
+    downloadCSV(processedPlaylistsData);
   });
 
   function clearCache() {
@@ -215,24 +299,48 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Add note about exclusions
+  function downloadCSV(playlists) {
+    const csvRows = [
+      ['Playlist ID', 'Playlist Name', 'Track ID', 'Track Name', 'Artists', 'Album']
+    ];
+
+    playlists.forEach(playlist => {
+      playlist.tracks.forEach(track => {
+        csvRows.push([
+          playlist.id,
+          playlist.name,
+          track.id,
+          track.name,
+          track.artists,
+          track.album
+        ]);
+      });
+    });
+
+    const csvContent = csvRows.map(e => e.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'playlists_report.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const noteElement = document.createElement('p');
   noteElement.innerHTML = `
     <strong>NOTE:</strong><br>
-    Playlists with more than 100 songs and playlists named "Outofplaylist" are excluded.<br>
+    The number of playlists shown is the total number of playlists in the account.<br>
+    Playlists will be filtered based on the criteria you set.<br>
     The file will be downloaded as playlists_report.json in your Downloads folder. Please save it in the extension's folder to view which playlist a song belongs to while playing.
   `;
   document.body.appendChild(noteElement);
 });
 
 function initiateSpotifyAuth() {
-  const clientId = '276ff68d7b8d45068933752f4cdbced5';
-  const redirectUri = 'https://bicapbdkaileclciifbengifanfenolh.chromiumapp.org/spotify';
-  const scopes = 'playlist-read-private playlist-read-collaborative';
-
   const codeVerifier = generateCodeVerifier();
   generateCodeChallenge(codeVerifier).then(codeChallenge => {
-    const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${encodeURIComponent(scopes)}&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge_method=S256&code_challenge=${codeChallenge}`;
+    const authUrl = `https://accounts.spotify.com/authorize?response_type=code&client_id=${clientId}&scope=${encodeURIComponent('playlist-read-private playlist-read-collaborative')}&redirect_uri=${encodeURIComponent(redirectUri)}&code_challenge_method=S256&code_challenge=${codeChallenge}`;
 
     chrome.identity.launchWebAuthFlow({ url: authUrl, interactive: true }, function (redirectUrl) {
       if (chrome.runtime.lastError || !redirectUrl) {
@@ -271,8 +379,6 @@ function base64UrlEncode(buffer) {
 }
 
 function exchangeCodeForToken(code, codeVerifier) {
-  const clientId = '276ff68d7b8d45068933752f4cdbced5';
-  const redirectUri = 'https://bicapbdkaileclciifbengifanfenolh.chromiumapp.org/spotify';
   const tokenUrl = 'https://accounts.spotify.com/api/token';
 
   const body = new URLSearchParams({

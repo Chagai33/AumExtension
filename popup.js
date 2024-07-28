@@ -1,3 +1,4 @@
+// popup.js
 document.addEventListener('DOMContentLoaded', () => {
   console.log('Document loaded');
 
@@ -21,11 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('download-playlists').addEventListener('click', () => {
     chrome.tabs.create({ url: "download.html" });
   });
-
-  // Remove the connect Spotify button event listener from the popup
-  // document.getElementById('connect-spotify').addEventListener('click', () => {
-  //   initiateSpotifyAuth();
-  // });
 
   let currentTrackId = null;
 
@@ -146,8 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function initiateSpotifyAuth() {
-  const clientId = '276ff68d7b8d45068933752f4cdbced5';
-  const redirectUri = 'https://bicapbdkaileclciifbengifanfenolh.chromiumapp.org/spotify';
+  const clientId = 'YOUR_CLIENT_ID';
+  const redirectUri = 'YOUR_REDIRECT_URI';
   const scopes = 'playlist-read-private playlist-read-collaborative';
 
   const codeVerifier = generateCodeVerifier();
@@ -191,8 +187,8 @@ function base64UrlEncode(buffer) {
 }
 
 function exchangeCodeForToken(code, codeVerifier) {
-  const clientId = '276ff68d7b8d45068933752f4cdbced5';
-  const redirectUri = 'https://bicapbdkaileclciifbengifanfenolh.chromiumapp.org/spotify';
+  const clientId = 'YOUR_CLIENT_ID';
+  const redirectUri = 'YOUR_REDIRECT_URI';
   const tokenUrl = 'https://accounts.spotify.com/api/token';
 
   const body = new URLSearchParams({
@@ -245,8 +241,6 @@ function getSpotifySongDetails() {
   let artistsContainer = document.querySelector('[data-testid="context-item-info-subtitles"]');
   let artistsElements = artistsContainer ? artistsContainer.querySelectorAll('[data-testid="context-item-info-artist"]') : [];
   let isPlaying = document.querySelector('[data-testid="control-button-pause"]') !== null;
-
-  let uniqueArtists = new Set();
 
   if (songTitleElement && artistsElements.length > 0) {
     let songTitle = songTitleElement.textContent;
@@ -343,7 +337,7 @@ async function findTrackInPlaylists(trackId, playlists) {
       if (trackIds.includes(trackId)) {
         matchingPlaylists.push({
           name: playlist.name,
-          id: playlist.id,  // Include the playlist ID here
+          id: playlist.id,
           url: `https://open.spotify.com/playlist/${playlist.id}`
         });
       }

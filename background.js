@@ -1,7 +1,7 @@
 // background.js
+
 console.log('Background script loaded');
 
-// Listener for onInstalled event to create context menu
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: 'downloadPlaylists',
@@ -11,7 +11,6 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('Context menu created');
 });
 
-// Listener for context menu click
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (info.menuItemId === 'downloadPlaylists') {
     chrome.storage.local.get('token', (result) => {
@@ -24,7 +23,6 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 });
 
-// Listener for runtime messages
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log('Message received in background:', request);
   if (request.action === 'downloadPlaylists') {
@@ -51,7 +49,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// Function to download playlists
 async function downloadPlaylists(token) {
   console.log('Starting to download playlists...');
   try {
@@ -81,13 +78,10 @@ async function downloadPlaylists(token) {
   }
 }
 
-// Function to fetch playlists
 async function fetchPlaylists(token) {
   const playlists = [];
   let url = 'https://api.spotify.com/v1/me/playlists';
   let totalPlaylists = 0;
-
-  chrome.runtime.sendMessage({ action: 'showProgressBar' });
 
   while (url) {
     const playlistsResponse = await fetch(url, {
@@ -108,7 +102,7 @@ async function fetchPlaylists(token) {
 
     console.log(`Fetched ${filteredPlaylists.length} playlists, total so far: ${totalPlaylists}`);
 
-    url = playlistsData.next; // Go to next page if available
+    url = playlistsData.next;
 
     chrome.runtime.sendMessage({
       action: 'updateProgress',
@@ -117,7 +111,7 @@ async function fetchPlaylists(token) {
       name: filteredPlaylists[filteredPlaylists.length - 1].name
     });
 
-    await sleep(200); // Sleep for 200ms to avoid rate limits
+    await sleep(200);
   }
 
   console.log(`Total playlists fetched: ${totalPlaylists}`);
@@ -145,9 +139,8 @@ async function fetchPlaylists(token) {
 
       console.log(`Fetched ${tracksData.items.length} tracks for playlist ${playlist.name}, total so far: ${totalTracks}`);
 
-      tracksUrl = tracksData.next; // Go to next page if available
-
-      await sleep(200); // Sleep for 200ms to avoid rate limits
+      tracksUrl = tracksData.next;
+      await sleep(200);
     }
 
     playlist.tracks = tracks.map(item => ({
@@ -160,12 +153,9 @@ async function fetchPlaylists(token) {
     console.log(`Total tracks for playlist ${playlist.name}: ${totalTracks}`);
   }
 
-  chrome.runtime.sendMessage({ action: 'hideProgressBar' });
-
   return playlists;
 }
 
-// Sleep function
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }

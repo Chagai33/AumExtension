@@ -1,4 +1,5 @@
+// callback.js
 window.onload = function() {
-  // Close the window after successful authentication
+  // סגור את החלון לאחר אימות מוצלח
   window.close();
 }
