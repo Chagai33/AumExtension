@@ -142,46 +142,40 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function getSpotifySongDetails() {
-  let nowPlayingElement = document.querySelector('[aria-label="now playing view link"]');
-  if (!nowPlayingElement) {
-    return {
-      title: "N/A",
-      artists: "N/A",
-      trackId: "N/A",
-      currentTime: 0,
-      duration: 0,
-      isPlaying: false
-    };
+  // Updated selectors based on user feedback
+  let title = "N/A";
+  let titleEl = document.querySelector('[data-testid="context-item-info-title"]');
+  if (titleEl) title = titleEl.textContent;
+
+  let artists = "N/A";
+  let artistsEl = document.querySelector('[data-testid="context-item-info-subtitles"]');
+  if (artistsEl) artists = artistsEl.textContent;
+
+  let trackId = "N/A";
+  // Try to find ANY link containing /track/
+  // The 'now-playing-bar' usually contains all controls
+  const bar = document.querySelector('[data-testid="now-playing-bar"]');
+  if (bar) {
+    const trackLink = bar.querySelector('a[href*="/track/"]');
+    if (trackLink) {
+      const parts = trackLink.href.split('/track/');
+      if (parts.length > 1) {
+        trackId = parts[1].split('?')[0];
+      }
+    }
   }
 
-  let trackId = nowPlayingElement.getAttribute('href').split(':').pop();
-  let songTitleElement = document.querySelector('[data-testid="context-item-info-title"] a');
-  let artistsContainer = document.querySelector('[data-testid="context-item-info-subtitles"]');
-  let artistsElements = artistsContainer ? artistsContainer.querySelectorAll('[data-testid="context-item-info-artist"]') : [];
+  // Fallback: If no track link found (e.g. only album link), try to parse from specific context if possible?
+  // Current known state: User snippet shows only album link. ID might be N/A.
+
   let isPlaying = document.querySelector('[data-testid="control-button-pause"]') !== null;
 
-  if (songTitleElement && artistsElements.length > 0) {
-    let songTitle = songTitleElement.textContent;
-    let artists = Array.from(artistsElements).map(a => {
-      let artistName = a.textContent;
-      let artistId = a.getAttribute('href').split('/').pop();
-      return `<a href="https://open.spotify.com/artist/${artistId}" target="_blank">${artistName}</a>`;
-    }).join(', ');
-
-    return {
-      title: songTitle,
-      artists: artists,
-      trackId: trackId,
-      isPlaying: isPlaying
-    };
-  } else {
-    return {
-      title: songTitleElement ? songTitleElement.textContent : "N/A",
-      artists: "N/A",
-      trackId: trackId,
-      isPlaying: isPlaying
-    };
-  }
+  return {
+    title: title,
+    artists: artists,
+    trackId: trackId,
+    isPlaying: isPlaying
+  };
 }
 
 function copyToClipboard(text) {

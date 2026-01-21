@@ -118,9 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
       const filtered = playlistsData.items.filter(playlist => {
         const name = playlist.name.toLowerCase();
         const isValid = playlist.tracks.total >= minSongs &&
-                        playlist.tracks.total <= maxSongs &&
-                        (!includeStrings[0] || includeStrings.some(str => name.includes(str))) &&
-                        (!excludeStrings[0] || !excludeStrings.some(str => name.includes(str)));
+          playlist.tracks.total <= maxSongs &&
+          (!includeStrings[0] || includeStrings.some(str => name.includes(str))) &&
+          (!excludeStrings[0] || !excludeStrings.some(str => name.includes(str)));
 
         if (!isValid) {
           console.log(`Skipping playlist: ${playlist.name} with ${playlist.tracks.total} tracks`);
@@ -396,21 +396,21 @@ function exchangeCodeForToken(code, codeVerifier) {
     },
     body: body.toString()
   })
-  .then(response => response.json())
-  .then(data => {
-    if (data.access_token) {
-      chrome.storage.local.set({ token: data.access_token }, () => {
-        console.log('Token saved');
-        alert('Spotify connected successfully!');
-        document.getElementById('start-button').style.display = 'block';
-        document.getElementById('connect-spotify-button').style.display = 'none';
-        document.getElementById('stop-button').style.display = 'block';
-      });
-    } else {
-      console.error('Error obtaining token:', data);
-    }
-  })
-  .catch(error => {
-    console.error('Error exchanging code for token:', error);
-  });
+    .then(response => response.json())
+    .then(data => {
+      if (data.access_token) {
+        chrome.storage.local.set({ token: data.access_token }, () => {
+          console.log('Token saved');
+          alert('Spotify connected successfully!');
+          document.getElementById('start-button').style.display = 'block';
+          document.getElementById('connect-spotify-button').style.display = 'none';
+          document.getElementById('stop-button').style.display = 'block';
+        });
+      } else {
+        console.error('Error obtaining token:', data);
+      }
+    })
+    .catch(error => {
+      console.error('Error exchanging code for token:', error);
+    });
 }

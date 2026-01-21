@@ -34,8 +34,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.spotify.com/*"],
-      "js": ["content.js"]
+      "matches": [
+        "*://*.spotify.com/*"
+      ],
+      "js": [
+        "content.js"
+      ]
     }
   ],
   "oauth2": {
@@ -43,7 +47,8 @@
     "scopes": [
       "identity",
       "playlist-read-private",
-      "playlist-read-collaborative"
+      "playlist-read-collaborative",
+      "user-read-currently-playing"
     ]
   }
 }
