@@ -7,6 +7,35 @@ Managing a massive music library is operationally expensive. As a curator with o
 
 Identifying this friction, I built this extension to act as a "second brain" for the Spotify Web Player, giving me instant visibility and quick actions.
 
+## 📸 Visual Demo
+
+<table>
+  <tr>
+    <td align="center">
+      <img src="screenshots/Spotify.jpg" width="400" />
+      <br />
+      Main Interface
+    </td>
+    <td align="center">
+      <img src="screenshots/playlist-check.jpg" width="400" />
+      <br />
+      Real-time Playlist Check
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <img src="screenshots/Switch_to.jpg" width="400" />
+      <br />
+      Quick Switching
+    </td>
+    <td align="center">
+      <img src="screenshots/Download.jpg" width="400" />
+      <br />
+      Data Export
+    </td>
+  </tr>
+</table>
+
 ## 🚀 Key Features
 
 ### 🧠 Smart Playlist Tracking
